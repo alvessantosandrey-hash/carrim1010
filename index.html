@@ -66,7 +66,7 @@
   </div>
   <div id="menu">
     <h1>Grow Fish 3D</h1>
-    <p>Oceano 3D. Nade, clique para morder, coma os menores. Nos maiores: gruda e clique várias vezes.</p>
+    <p>Oceano 3D. Clique para morder. Peixes menores: come. Maiores: gruda e clique várias vezes.</p>
     <button class="btn" id="start">Começar a Nadar</button>
   </div>
   <div id="dead" style="display:none">
@@ -80,38 +80,40 @@
     <button class="btn" id="cont">Continuar</button>
   </div>
 
-  <script type="importmap">
-  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
-  </script>
-  <script type="module">
-import * as THREE from 'three';
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script>
+(function () {
+if (typeof THREE === 'undefined') {
+  document.body.innerHTML = '<div style="color:#fff;padding:40px;font-family:sans-serif">Erro: nao carregou o Three.js. Abra com internet.</div>';
+  return;
+}
 
 const TIERS = [
-  {n:'Plâncton',e:'P',s:0.35,c:0xaed581,lv:0,sp:'plankton'},
-  {n:'Camarão',e:'C',s:0.5,c:0xff8a65,lv:1,sp:'shrimp'},
-  {n:'Cavalo-marinho',e:'H',s:0.65,c:0xffb74d,lv:1,sp:'seahorse'},
-  {n:'Peixe-dourado',e:'G',s:0.75,c:0xffa726,lv:2,sp:'goldfish'},
-  {n:'Palhaço',e:'O',s:0.9,c:0xff7043,lv:2,sp:'clown'},
-  {n:'Azul',e:'A',s:1.1,c:0x42a5f5,lv:3,sp:'blue'},
-  {n:'Peixe-anjo',e:'J',s:1.2,c:0xffee58,lv:3,sp:'angel'},
-  {n:'Baiacu',e:'B',s:1.4,c:0xffca28,lv:4,sp:'puffer'},
-  {n:'Peixe-leão',e:'L',s:1.55,c:0xff6f00,lv:5,sp:'lion'},
-  {n:'Papagaio',e:'R',s:1.7,c:0x26a69a,lv:6,sp:'parrot'},
-  {n:'Atum',e:'T',s:1.95,c:0x5c6bc0,lv:7,sp:'tuna'},
-  {n:'Moreia',e:'M',s:2.1,c:0x558b2f,lv:8,sp:'moray'},
-  {n:'Espada',e:'E',s:2.4,c:0x78909c,lv:9,sp:'sword'},
-  {n:'Barracuda',e:'U',s:2.6,c:0x90a4ae,lv:10,sp:'barra'},
-  {n:'Arraia',e:'Y',s:2.8,c:0x5d4037,lv:11,sp:'ray'},
-  {n:'Tubarão',e:'S',s:3.2,c:0x607d8b,lv:12,sp:'shark'},
-  {n:'Martelo',e:'K',s:3.5,c:0x546e7a,lv:13,sp:'hammer'},
-  {n:'Golfinho',e:'D',s:3.8,c:0x81d4fa,lv:14,sp:'dolphin'},
-  {n:'Orca',e:'W',s:4.3,c:0x212121,lv:15,sp:'orca'},
-  {n:'Manta',e:'N',s:4.8,c:0x263238,lv:16,sp:'manta'},
-  {n:'Lanterna',e:'I',s:5.0,c:0x1a237e,lv:17,sp:'lantern'},
-  {n:'Baleia',e:'V',s:5.6,c:0x455a64,lv:18,sp:'whale'},
-  {n:'Peixe-lua',e:'X',s:6.2,c:0xffcc80,lv:20,sp:'sunfish'},
-  {n:'Kraken',e:'Q',s:7.2,c:0x7e57c2,lv:22,sp:'kraken'},
-  {n:'Leviatã',e:'Z',s:9.0,c:0x4a148c,lv:28,sp:'leviathan'},
+  {n:'Plancton',s:0.35,c:0xaed581,lv:0,sp:'plankton'},
+  {n:'Camarao',s:0.5,c:0xff8a65,lv:1,sp:'shrimp'},
+  {n:'Cavalo-marinho',s:0.65,c:0xffb74d,lv:1,sp:'seahorse'},
+  {n:'Peixe-dourado',s:0.75,c:0xffa726,lv:2,sp:'goldfish'},
+  {n:'Palhaco',s:0.9,c:0xff7043,lv:2,sp:'clown'},
+  {n:'Azul',s:1.1,c:0x42a5f5,lv:3,sp:'blue'},
+  {n:'Peixe-anjo',s:1.2,c:0xffee58,lv:3,sp:'angel'},
+  {n:'Baiacu',s:1.4,c:0xffca28,lv:4,sp:'puffer'},
+  {n:'Peixe-leao',s:1.55,c:0xff6f00,lv:5,sp:'lion'},
+  {n:'Papagaio',s:1.7,c:0x26a69a,lv:6,sp:'parrot'},
+  {n:'Atum',s:1.95,c:0x5c6bc0,lv:7,sp:'tuna'},
+  {n:'Moreia',s:2.1,c:0x558b2f,lv:8,sp:'moray'},
+  {n:'Espada',s:2.4,c:0x78909c,lv:9,sp:'sword'},
+  {n:'Barracuda',s:2.6,c:0x90a4ae,lv:10,sp:'barra'},
+  {n:'Arraia',s:2.8,c:0x5d4037,lv:11,sp:'ray'},
+  {n:'Tubarao',s:3.2,c:0x607d8b,lv:12,sp:'shark'},
+  {n:'Martelo',s:3.5,c:0x546e7a,lv:13,sp:'hammer'},
+  {n:'Golfinho',s:3.8,c:0x81d4fa,lv:14,sp:'dolphin'},
+  {n:'Orca',s:4.3,c:0x212121,lv:15,sp:'orca'},
+  {n:'Manta',s:4.8,c:0x263238,lv:16,sp:'manta'},
+  {n:'Lanterna',s:5.0,c:0x1a237e,lv:17,sp:'lantern'},
+  {n:'Baleia',s:5.6,c:0x455a64,lv:18,sp:'whale'},
+  {n:'Peixe-lua',s:6.2,c:0xffcc80,lv:20,sp:'sunfish'},
+  {n:'Kraken',s:7.2,c:0x7e57c2,lv:22,sp:'kraken'},
+  {n:'Leviatan',s:9.0,c:0x4a148c,lv:28,sp:'leviathan'},
 ];
 
 let renderer, scene, camera, clock;
@@ -329,9 +331,12 @@ function initThree() {
   sun.position.set(20, 40, 10);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
-  scene.shadow.camera.near = 1; sun.shadow.camera.far = 100;
-  sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
-  sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+  sun.shadow.camera.near = 1;
+  sun.shadow.camera.far = 100;
+  sun.shadow.camera.left = -40;
+  sun.shadow.camera.right = 40;
+  sun.shadow.camera.top = 40;
+  sun.shadow.camera.bottom = -40;
   scene.add(sun);
   const fill = new THREE.DirectionalLight(0x40a0d0, 0.45);
   fill.position.set(-10, 5, -15);
@@ -351,7 +356,8 @@ function initThree() {
     const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.25, 0.15, 0.2 + Math.random() * 0.15), roughness: 0.9 }));
     rock.position.set((Math.random() - 0.5) * WORLD * 1.8, -8 + r * 0.5, (Math.random() - 0.5) * WORLD * 1.8);
     rock.rotation.set(Math.random(), Math.random(), Math.random());
-    rock.castShadow = true; rock.receiveShadow = true;
+    rock.castShadow = true;
+    rock.receiveShadow = true;
     scene.add(rock);
   }
   for (let i = 0; i < 60; i++) {
@@ -363,7 +369,9 @@ function initThree() {
     bubbles.push({ type: 'weed', mesh: weed });
   }
   const water = new THREE.Mesh(new THREE.PlaneGeometry(WORLD * 3, WORLD * 3), new THREE.MeshStandardMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.22, roughness: 0.15, metalness: 0.35, side: THREE.DoubleSide }));
-  water.rotation.x = -Math.PI / 2; water.position.y = 11; scene.add(water);
+  water.rotation.x = -Math.PI / 2;
+  water.position.y = 11;
+  scene.add(water);
   const bubbleMat = new THREE.MeshStandardMaterial({ color: 0xa0e0ff, transparent: true, opacity: 0.35, roughness: 0.4 });
   for (let i = 0; i < 40; i++) {
     const b = new THREE.Mesh(new THREE.SphereGeometry(0.08 + Math.random() * 0.12, 8, 8), bubbleMat);
@@ -372,7 +380,7 @@ function initThree() {
     bubbles.push({ type: 'bubble', mesh: b, speed: 0.5 + Math.random() * 1.2 });
   }
   clock = new THREE.Clock();
-  window.addEventListener('resize', () => {
+  window.addEventListener('resize', function () {
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
@@ -424,7 +432,7 @@ function spawnFish(near) {
   const ang = Math.random() * Math.PI * 2;
   const maxHp = Math.max(1, Math.ceil(size * 4));
   entities.push({
-    mesh, size, color, type, danger, value,
+    mesh: mesh, size: size, color: color, type: type, danger: danger, value: value,
     vx: Math.sin(ang) * spd, vy: (Math.random() - 0.5) * 0.4, vz: Math.cos(ang) * spd,
     targetVx: 0, targetVz: 0, targetVy: 0,
     yaw: ang, turnT: 1 + Math.random() * 2, wobble: Math.random() * 10,
@@ -433,7 +441,7 @@ function spawnFish(near) {
 }
 
 function clearEntities() {
-  for (const e of entities) scene.remove(e.mesh);
+  for (let i = 0; i < entities.length; i++) scene.remove(entities[i].mesh);
   entities = [];
 }
 
@@ -449,13 +457,15 @@ function updatePlayer(dt) {
   if (keys['e'] || keys['KeyE']) playerState.yaw -= TURN * dt;
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   for (let pi = 0; pi < pads.length; pi++) {
-    const gp = pads[pi]; if (!gp) continue;
+    const gp = pads[pi];
+    if (!gp) continue;
     const dead = 0.18;
     let ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, arx = gp.axes[2] || 0;
     if (Math.abs(ax) < dead) ax = 0;
     if (Math.abs(ay) < dead) ay = 0;
     if (Math.abs(arx) < dead) arx = 0;
-    fwd += -ay; str += ax;
+    fwd += -ay;
+    str += ax;
     playerState.yaw -= arx * TURN * 1.4 * dt;
     if (gp.buttons[12] && gp.buttons[12].pressed) fwd += 1;
     if (gp.buttons[13] && gp.buttons[13].pressed) fwd -= 1;
@@ -474,14 +484,18 @@ function updatePlayer(dt) {
   if (playerState.biteCd > 0) playerState.biteCd -= dt;
   if (playerState.bitePulse > 0) playerState.bitePulse -= dt;
   if ((keys['bite'] || keys['f'] || keys['KeyF']) && playerState.biteCd <= 0) {
-    playerState.bitePulse = 0.25; playerState.biteCd = 0.22; playerState.biteHit = true; keys['bite'] = false;
+    playerState.bitePulse = 0.25;
+    playerState.biteCd = 0.22;
+    playerState.biteHit = true;
+    keys['bite'] = false;
   }
   const wantBite = playerState.bitePulse > 0;
   playerState.mouth += ((wantBite ? 1 : 0) - playerState.mouth) * Math.min(1, 18 * dt);
   if (fwd || str || vert) {
     const len = Math.hypot(fwd, str, vert) || 1;
     fwd /= len; str /= len; vert /= len;
-    const cp = Math.cos(playerState.pitch), sp = Math.sin(playerState.pitch);
+    const cp = Math.cos(playerState.pitch);
+    const sp = Math.sin(playerState.pitch);
     playerState.vx += (Math.sin(playerState.yaw) * fwd * cp + Math.cos(playerState.yaw) * str) * ACCEL * dt;
     playerState.vz += (Math.cos(playerState.yaw) * fwd * cp - Math.sin(playerState.yaw) * str) * ACCEL * dt;
     playerState.vy += (vert + fwd * sp) * ACCEL * dt;
@@ -490,9 +504,13 @@ function updatePlayer(dt) {
   playerState.vy += buoyancy * dt;
   playerState.vy *= Math.exp(-3.2 * dt);
   const damp = Math.exp(-DRAG * dt);
-  playerState.vx *= damp; playerState.vz *= damp;
+  playerState.vx *= damp;
+  playerState.vz *= damp;
   const spd = Math.hypot(playerState.vx, playerState.vy, playerState.vz);
-  if (spd > MAXSP) { const f = MAXSP / spd; playerState.vx *= f; playerState.vy *= f; playerState.vz *= f; }
+  if (spd > MAXSP) {
+    const f = MAXSP / spd;
+    playerState.vx *= f; playerState.vy *= f; playerState.vz *= f;
+  }
   playerState.x += playerState.vx * dt;
   playerState.y += playerState.vy * dt;
   playerState.z += playerState.vz * dt;
@@ -520,13 +538,16 @@ function updatePlayer(dt) {
   } else if (playerState.mouth > 0.4) {
     mh.style.display = 'block';
     mh.textContent = 'Clique para morder!';
-  } else mh.style.display = 'none';
+  } else {
+    mh.style.display = 'none';
+  }
 }
 
 function updateCamera(dt) {
   const dist = 12 + playerState.size * 1.8;
   const heightBase = 4.2 + playerState.size * 0.55;
-  const cp = Math.cos(playerState.pitch), sp = Math.sin(playerState.pitch);
+  const cp = Math.cos(playerState.pitch);
+  const sp = Math.sin(playerState.pitch);
   const tx = playerState.x - Math.sin(playerState.yaw) * dist * Math.max(0.35, cp);
   const tz = playerState.z - Math.cos(playerState.yaw) * dist * Math.max(0.35, cp);
   const ty = playerState.y + heightBase - sp * (dist * 0.55);
@@ -550,12 +571,20 @@ function updateEntities(dt) {
       e.turnT = 1.2 + Math.random() * 2.5;
       const ang = Math.random() * Math.PI * 2;
       const sp = 0.8 + Math.random() * 2;
-      e.targetVx = Math.sin(ang) * sp; e.targetVz = Math.cos(ang) * sp; e.targetVy = (Math.random() - 0.5) * 0.5;
+      e.targetVx = Math.sin(ang) * sp;
+      e.targetVz = Math.cos(ang) * sp;
+      e.targetVy = (Math.random() - 0.5) * 0.5;
     }
     if (e.danger) {
-      const dx = playerState.x - e.mesh.position.x, dy = playerState.y - e.mesh.position.y, dz = playerState.z - e.mesh.position.z;
+      const dx = playerState.x - e.mesh.position.x;
+      const dy = playerState.y - e.mesh.position.y;
+      const dz = playerState.z - e.mesh.position.z;
       const dd = Math.hypot(dx, dy, dz);
-      if (dd < 22) { e.targetVx = (dx / dd) * 2.5; e.targetVz = (dz / dd) * 2.5; e.targetVy = (dy / dd); }
+      if (dd < 22) {
+        e.targetVx = (dx / dd) * 2.5;
+        e.targetVz = (dz / dd) * 2.5;
+        e.targetVy = (dy / dd);
+      }
     }
     e.vx += (e.targetVx - e.vx) * 2 * dt;
     e.vz += (e.targetVz - e.vz) * 2 * dt;
@@ -591,7 +620,11 @@ function updateEntities(dt) {
       e.hp -= dmg;
       playerState.biteHit = false;
       showDamage(e.mesh.position, Math.round(dmg), false);
-      if (e.hp <= 0) { playerState.latch = null; eatEntity(i, e); continue; }
+      if (e.hp <= 0) {
+        playerState.latch = null;
+        eatEntity(i, e);
+        continue;
+      }
     }
     if (playerState.latch === e && d > eatR * 1.7) playerState.latch = null;
     if (playerState.latch === e) {
@@ -599,12 +632,15 @@ function updateEntities(dt) {
       playerState.x = e.mesh.position.x + Math.sin(ang) * (e.size * 0.6 + playerState.size * 0.4);
       playerState.y = e.mesh.position.y;
       playerState.z = e.mesh.position.z + Math.cos(ang) * (e.size * 0.6 + playerState.size * 0.4);
-      playerState.vx = e.vx; playerState.vy = e.vy; playerState.vz = e.vz;
+      playerState.vx = e.vx;
+      playerState.vy = e.vy;
+      playerState.vz = e.vz;
     }
     if (d < eatR * 0.7 && e.danger && e.size >= playerState.size * 1.05 && invuln <= 0 && playerState.mouth < 0.3 && playerState.latch !== e) die();
     if (d > 100) {
       if (playerState.latch === e) playerState.latch = null;
-      scene.remove(e.mesh); entities.splice(i, 1);
+      scene.remove(e.mesh);
+      entities.splice(i, 1);
     }
   }
   if (playerState.biteHit && playerState.bitePulse < 0.12) playerState.biteHit = false;
@@ -612,9 +648,10 @@ function updateEntities(dt) {
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.textContent = msg;
+  t.classList.add('show');
   clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  window._toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
 }
 
 function showDamage(pos, amount, ate) {
@@ -626,13 +663,14 @@ function showDamage(pos, amount, ate) {
   el.style.left = ((v.x * 0.5 + 0.5) * innerWidth) + 'px';
   el.style.top = ((-v.y * 0.5 + 0.5) * innerHeight) + 'px';
   document.getElementById('dmg-layer').appendChild(el);
-  setTimeout(() => el.remove(), 800);
+  setTimeout(function () { el.remove(); }, 800);
 }
 
 function eatEntity(i, e) {
   score += e.value * bite;
   xp += e.value + (e.maxHp || 0) * 2;
-  scene.remove(e.mesh); entities.splice(i, 1);
+  scene.remove(e.mesh);
+  entities.splice(i, 1);
   playerState.size = Math.min(playerState.size + e.size * 0.06, 8);
   if (playerMesh) playerMesh.scale.setScalar(playerState.size);
   while (xp >= xpNeed) {
@@ -641,21 +679,25 @@ function eatEntity(i, e) {
     bite = 6 + (level - 1) * 3;
     playerState.size = Math.min(playerState.size + 0.12, 8);
     if (playerMesh) playerMesh.scale.setScalar(playerState.size);
-    for (let t = TIERS.length - 1; t >= 0; t--) if (level >= TIERS[t].lv) { playerState.tier = t; break; }
+    for (let t = TIERS.length - 1; t >= 0; t--) {
+      if (level >= TIERS[t].lv) { playerState.tier = t; break; }
+    }
     showToast('Nivel ' + level + '! Mordida: ' + bite + ' • Tamanho: ' + playerState.size.toFixed(1));
   }
   ui();
 }
 
 function die() {
-  playerState.latch = null; state = 'dead';
+  playerState.latch = null;
+  state = 'dead';
   document.getElementById('fsc').textContent = score;
   document.getElementById('dead').style.display = 'flex';
   document.getElementById('pads').classList.remove('show');
 }
 
 function updateBubbles(dt) {
-  for (const b of bubbles) {
+  for (let i = 0; i < bubbles.length; i++) {
+    const b = bubbles[i];
     if (b.type === 'bubble') {
       b.mesh.position.y += b.speed * dt;
       if (b.mesh.position.y > 12) {
@@ -684,9 +726,11 @@ function start() {
   document.getElementById('pads').classList.add('show');
   Object.assign(playerState, { x:0, y:2, z:0, vx:0, vy:0, vz:0, yaw:0, pitch:0, size:1, tier:0, color:0x66bb6a, mouth:0, tail:0, latch:null, bitePulse:0, biteCd:0, biteHit:false });
   score=0; level=1; xp=0; xpNeed=10; bite=6; invuln=0; spawnT=0.5;
-  clearEntities(); createPlayer();
+  clearEntities();
+  createPlayer();
   for (let i = 0; i < 40; i++) spawnFish(false);
-  state = 'playing'; ui();
+  state = 'playing';
+  ui();
   camera.position.set(0, 8, -12);
 }
 
@@ -694,7 +738,9 @@ function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), 0.05);
   if (state === 'playing') {
-    updatePlayer(dt); updateCamera(dt); updateEntities(dt);
+    updatePlayer(dt);
+    updateCamera(dt);
+    updateEntities(dt);
     spawnT -= dt;
     if (spawnT <= 0) { spawnFish(true); spawnT = Math.max(0.35, 1 - level * 0.03); }
     if (invuln > 0) invuln -= dt;
@@ -707,22 +753,28 @@ function loop() {
   renderer.render(scene, camera);
 }
 
-window.addEventListener('keydown', e => {
-  keys[e.key.toLowerCase()] = true; keys[e.code] = true;
-  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+window.addEventListener('keydown', function (e) {
+  keys[e.key.toLowerCase()] = true;
+  keys[e.code] = true;
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') e.preventDefault();
 });
-window.addEventListener('keyup', e => {
-  keys[e.key.toLowerCase()] = false; keys[e.code] = false;
+window.addEventListener('keyup', function (e) {
+  keys[e.key.toLowerCase()] = false;
+  keys[e.code] = false;
 });
-window.addEventListener('mousedown', () => {
+window.addEventListener('mousedown', function () {
   if (state === 'playing') {
     mouseDown = true;
-    if (playerState.biteCd <= 0) { playerState.bitePulse = 0.28; playerState.biteCd = 0.18; playerState.biteHit = true; }
+    if (playerState.biteCd <= 0) {
+      playerState.bitePulse = 0.28;
+      playerState.biteCd = 0.18;
+      playerState.biteHit = true;
+    }
     if (document.pointerLockElement !== renderer.domElement) renderer.domElement.requestPointerLock();
   }
 });
-window.addEventListener('mouseup', () => { mouseDown = false; });
-window.addEventListener('mousemove', (e) => {
+window.addEventListener('mouseup', function () { mouseDown = false; });
+window.addEventListener('mousemove', function (e) {
   if (state !== 'playing') return;
   if (document.pointerLockElement === renderer.domElement) {
     playerState.yaw -= e.movementX * 0.0025;
@@ -732,10 +784,13 @@ window.addEventListener('mousemove', (e) => {
 });
 
 function bind(id, key) {
-  const el = document.getElementById(id); if (!el) return;
-  const down = ev => { ev.preventDefault(); keys[key] = true; el.classList.add('on'); };
-  const up = ev => { ev.preventDefault(); keys[key] = false; el.classList.remove('on'); };
-  el.addEventListener('mousedown', down); el.addEventListener('mouseup', up); el.addEventListener('mouseleave', up);
+  const el = document.getElementById(id);
+  if (!el) return;
+  const down = function (ev) { ev.preventDefault(); keys[key] = true; el.classList.add('on'); };
+  const up = function (ev) { ev.preventDefault(); keys[key] = false; el.classList.remove('on'); };
+  el.addEventListener('mousedown', down);
+  el.addEventListener('mouseup', up);
+  el.addEventListener('mouseleave', up);
   el.addEventListener('touchstart', down, { passive: false });
   el.addEventListener('touchend', up, { passive: false });
 }
@@ -743,14 +798,22 @@ bind('bu','w'); bind('bd','s'); bind('bl','a'); bind('br','d');
 bind('brise',' '); bind('bsink','shift'); bind('bbite','bite');
 document.getElementById('start').onclick = start;
 document.getElementById('re').onclick = start;
-document.getElementById('cont').onclick = () => {
+document.getElementById('cont').onclick = function () {
   document.getElementById('lvlup').style.display = 'none';
   document.getElementById('pads').classList.add('show');
   state = 'playing'; invuln = 1.5;
 };
-initThree(); createPlayer();
-for (let i = 0; i < 25; i++) spawnFish(false);
-loop();
+
+try {
+  initThree();
+  createPlayer();
+  for (let i = 0; i < 25; i++) spawnFish(false);
+  loop();
+} catch (err) {
+  document.body.insertAdjacentHTML('afterbegin', '<div style="position:fixed;inset:0;z-index:99;background:#001018;color:#fff;padding:32px;font-family:sans-serif"><h2>Erro ao iniciar</h2><pre>' + String(err && err.stack || err) + '</pre></div>');
+  console.error(err);
+}
+})();
   </script>
 </body>
 </html>
