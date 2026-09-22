@@ -1,819 +1,488 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Grow Fish 3D Realista</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{background:#000;overflow:hidden;font-family:system-ui,sans-serif;color:#e0f7fa;user-select:none;-webkit-user-select:none}
-    #c{display:block;width:100vw;height:100vh}
-    #ui{position:fixed;top:0;left:0;right:0;padding:12px 16px;display:flex;gap:10px;flex-wrap:wrap;pointer-events:none;z-index:10;background:linear-gradient(to bottom,rgba(0,20,30,.7),transparent)}
-    .stat{background:rgba(0,40,60,.8);border:1px solid #1a8aaa;border-radius:8px;padding:6px 12px;font-size:14px}
-    .stat span{color:#4dd0e1;font-weight:700}
-    #xp{position:fixed;bottom:0;left:0;right:0;height:8px;background:rgba(0,20,30,.8);z-index:10}
-    #xp-fill{height:100%;width:0%;background:linear-gradient(90deg,#00acc1,#4dd0e1);box-shadow:0 0 10px #4dd0e1;transition:width .15s}
-    #hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);font-size:13px;color:rgba(128,222,234,.7);z-index:10;pointer-events:none;text-align:center}
-    #menu,#dead,#lvlup{position:fixed;inset:0;background:rgba(0,10,20,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;gap:14px;text-align:center;padding:20px}
-    #menu h1{font-size:2.4rem;color:#4dd0e1;text-shadow:0 0 20px #00bcd4}
-    #menu p,#dead p,#lvlup p{color:#80deea;max-width:420px;line-height:1.5}
-    .btn{background:linear-gradient(135deg,#00838f,#006064);border:none;color:#fff;padding:14px 36px;font-size:1.1rem;border-radius:30px;cursor:pointer;font-weight:600;box-shadow:0 4px 16px rgba(0,150,160,.4)}
-    .btn:hover{transform:scale(1.05)}
-    #pads{position:fixed;inset:0;pointer-events:none;z-index:15;display:none}
-    #pads.show{display:block}
-    .pad{position:absolute;pointer-events:auto;display:grid;gap:6px;grid-template-columns:56px 56px 56px;grid-template-rows:56px 56px 56px}
-    #mp{left:14px;bottom:24px}
-    #ap{right:14px;bottom:24px;display:flex;flex-direction:column;gap:10px}
-    .pb{width:56px;height:56px;border-radius:50%;border:2px solid rgba(77,208,225,.5);background:rgba(0,50,70,.75);color:#e0f7fa;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none}
-    .pb:active,.pb.on{background:rgba(0,160,180,.9);transform:scale(.92)}
-    .pb.e{visibility:hidden}
-    #bu{grid-column:2;grid-row:1}#bl{grid-column:1;grid-row:2}#bd{grid-column:2;grid-row:2}#br{grid-column:3;grid-row:2}
-    .ab{width:64px;height:64px;border-radius:50%;border:2px solid rgba(77,208,225,.55);background:rgba(0,60,80,.8);color:#e0f7fa;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;gap:2px}
-    .ab:active,.ab.on{background:rgba(0,170,190,.9);transform:scale(.92)}
-    #bbite{border-color:rgba(255,100,100,.6)}
-    #bbite.on{background:rgba(180,40,40,.85)}
-    #mouth-hint{position:fixed;top:56px;left:50%;transform:translateX(-50%);color:rgba(255,80,80,.8);font-weight:700;font-size:15px;z-index:12;display:none;pointer-events:none}
-    #toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(0,80,100,.92);border:1px solid #4dd0e1;color:#e0f7fa;padding:12px 28px;border-radius:12px;font-weight:700;font-size:16px;z-index:25;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-    #dmg-layer{position:fixed;inset:0;pointer-events:none;z-index:18;overflow:hidden}
-    .dmg-num{position:absolute;transform:translate(-50%,-50%);font-weight:900;font-size:28px;color:#ff3d3d;text-shadow:0 0 8px #000,0 2px 0 #7f0000;animation:dmgFly .75s ease-out forwards;white-space:nowrap}
-    .dmg-num.eat{color:#69f0ae;text-shadow:0 0 8px #000}
-    @keyframes dmgFly{0%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-110px) scale(1)}}
-  </style>
-</head>
-<body>
-  <div id="ui">
-    <div class="stat">Nível: <span id="lvl">1</span></div>
-    <div class="stat">Tamanho: <span id="sz">1.0</span></div>
-    <div class="stat">Mordida: <span id="bt">6</span></div>
-    <div class="stat">Pontos: <span id="sc">0</span></div>
-  </div>
-  <div id="xp"><div id="xp-fill"></div></div>
-  <div id="hint">Clique = cada mordida (não segura) • Gruda nos maiores • Dano aparece na tela</div>
-  <div id="mouth-hint">BOCA ABERTA</div>
-  <div id="toast"></div>
-  <div id="dmg-layer"></div>
-  <div id="pads">
-    <div class="pad" id="mp">
-      <div class="pb e"></div><div class="pb" id="bu">▲</div><div class="pb e"></div>
-      <div class="pb" id="bl">◀</div><div class="pb" id="bd">▼</div><div class="pb" id="br">▶</div>
-    </div>
-    <div id="ap">
-      <div class="ab" id="brise"><span>⬆</span>Subir</div>
-      <div class="ab" id="bsink"><span>⬇</span>Descer</div>
-      <div class="ab" id="bbite"><span>M</span>Morder</div>
-    </div>
-  </div>
-  <div id="menu">
-    <h1>Grow Fish 3D</h1>
-    <p>Oceano 3D. Clique para morder. Peixes menores: come. Maiores: gruda e clique várias vezes.</p>
-    <button class="btn" id="start">Começar a Nadar</button>
-  </div>
-  <div id="dead" style="display:none">
-    <h2 style="color:#ef5350;font-size:1.8rem">Você foi comido!</h2>
-    <p>Pontos: <span id="fsc">0</span></p>
-    <button class="btn" id="re">Jogar de Novo</button>
-  </div>
-  <div id="lvlup" style="display:none">
-    <h2 style="color:#69f0ae;font-size:1.8rem">Nível +1!</h2>
-    <p id="lmsg"></p>
-    <button class="btn" id="cont">Continuar</button>
-  </div>
+#!/usr/bin/env python3
+"""
+UFC Career: Rise to Glory
+Protótipo de Modo Carreira Realista
+Incorpora: sistema de lesões, ranking dinâmico, taxas reais de finalização,
+caminho amador → UFC → cinturão, wear & tear, weight cut e gestão.
+"""
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-  <script>
-(function () {
-if (typeof THREE === 'undefined') {
-  document.body.innerHTML = '<div style="color:#fff;padding:40px;font-family:sans-serif">Erro: nao carregou o Three.js. Abra com internet.</div>';
-  return;
+import random
+import time
+import os
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
+
+# ============================================================
+# DADOS REAIS (baseados em estatísticas UFC 2024-2026)
+# ============================================================
+
+FINISH_RATES = {
+    "Heavyweight":       {"ko": 0.51, "sub": 0.15, "dec": 0.34},
+    "Light Heavyweight": {"ko": 0.45, "sub": 0.17, "dec": 0.38},
+    "Middleweight":      {"ko": 0.38, "sub": 0.21, "dec": 0.41},
+    "Welterweight":      {"ko": 0.33, "sub": 0.19, "dec": 0.48},
+    "Lightweight":       {"ko": 0.30, "sub": 0.22, "dec": 0.48},
+    "Featherweight":     {"ko": 0.29, "sub": 0.17, "dec": 0.54},
+    "Bantamweight":      {"ko": 0.26, "sub": 0.20, "dec": 0.54},
+    "Flyweight":         {"ko": 0.24, "sub": 0.22, "dec": 0.54},
 }
 
-const TIERS = [
-  {n:'Plancton',s:0.35,c:0xaed581,lv:0,sp:'plankton'},
-  {n:'Camarao',s:0.5,c:0xff8a65,lv:1,sp:'shrimp'},
-  {n:'Cavalo-marinho',s:0.65,c:0xffb74d,lv:1,sp:'seahorse'},
-  {n:'Peixe-dourado',s:0.75,c:0xffa726,lv:2,sp:'goldfish'},
-  {n:'Palhaco',s:0.9,c:0xff7043,lv:2,sp:'clown'},
-  {n:'Azul',s:1.1,c:0x42a5f5,lv:3,sp:'blue'},
-  {n:'Peixe-anjo',s:1.2,c:0xffee58,lv:3,sp:'angel'},
-  {n:'Baiacu',s:1.4,c:0xffca28,lv:4,sp:'puffer'},
-  {n:'Peixe-leao',s:1.55,c:0xff6f00,lv:5,sp:'lion'},
-  {n:'Papagaio',s:1.7,c:0x26a69a,lv:6,sp:'parrot'},
-  {n:'Atum',s:1.95,c:0x5c6bc0,lv:7,sp:'tuna'},
-  {n:'Moreia',s:2.1,c:0x558b2f,lv:8,sp:'moray'},
-  {n:'Espada',s:2.4,c:0x78909c,lv:9,sp:'sword'},
-  {n:'Barracuda',s:2.6,c:0x90a4ae,lv:10,sp:'barra'},
-  {n:'Arraia',s:2.8,c:0x5d4037,lv:11,sp:'ray'},
-  {n:'Tubarao',s:3.2,c:0x607d8b,lv:12,sp:'shark'},
-  {n:'Martelo',s:3.5,c:0x546e7a,lv:13,sp:'hammer'},
-  {n:'Golfinho',s:3.8,c:0x81d4fa,lv:14,sp:'dolphin'},
-  {n:'Orca',s:4.3,c:0x212121,lv:15,sp:'orca'},
-  {n:'Manta',s:4.8,c:0x263238,lv:16,sp:'manta'},
-  {n:'Lanterna',s:5.0,c:0x1a237e,lv:17,sp:'lantern'},
-  {n:'Baleia',s:5.6,c:0x455a64,lv:18,sp:'whale'},
-  {n:'Peixe-lua',s:6.2,c:0xffcc80,lv:20,sp:'sunfish'},
-  {n:'Kraken',s:7.2,c:0x7e57c2,lv:22,sp:'kraken'},
-  {n:'Leviatan',s:9.0,c:0x4a148c,lv:28,sp:'leviathan'},
-];
+WEIGHT_CLASSES = list(FINISH_RATES.keys())
 
-let renderer, scene, camera, clock;
-let playerMesh, mouthPivot;
-let entities = [];
-let bubbles = [];
-let keys = {};
-let mouseDown = false;
-let score=0, level=1, xp=0, xpNeed=10, bite=6, invuln=0;
-let state = 'menu';
-let spawnT = 0;
-const WORLD = 70;
-const ACCEL = 28, DRAG = 2.0, MAXSP = 14, TURN = 3.5;
+INJURY_TYPES = {
+    "corte": {"chance_base": 0.28, "recuperacao": (1, 4), "efeito": "visao_reduzida"},
+    "hematoma": {"chance_base": 0.22, "recuperacao": (1, 3), "efeito": "precisao_reduzida"},
+    "fratura": {"chance_base": 0.09, "recuperacao": (6, 16), "efeito": "membro_inutil"},
+    "concussao": {"chance_base": 0.12, "recuperacao": (4, 12), "efeito": "chin_e_iq_reduzidos"},
+    "lesao_muscular": {"chance_base": 0.15, "recuperacao": (3, 10), "efeito": "forca_reduzida"},
+    "lesao_weight_cut": {"chance_base": 0.08, "recuperacao": (1, 3), "efeito": "cardio_ruim"},
+}
 
-const playerState = {
-  x:0, y:2, z:0, vx:0, vy:0, vz:0, yaw:0, pitch:0, size:1, tier:0, color:0x66bb6a, mouth:0, tail:0, latch:null, bitePulse:0, biteCd:0, biteHit:false
-};
+STAGES = [
+    "Amador / Regional",
+    "Prospect / Contender",
+    "UFC Unranked",
+    "UFC Ranked (15-6)",
+    "Top 5 / Title Contender",
+    "Campeão",
+    "Lenda / Aposentado"
+]
 
-function makeFishMesh(color, size, isPlayer, species) {
-  const g = new THREE.Group();
-  const sp = species || 'default';
-  const palette = {
-    default: { body: color, dark: null, accent: 0xffee88, eye: 0xffffff },
-    plankton: { body: 0xaed581, dark: 0x7cb342, accent: 0xc5e1a5, eye: 0xffffff },
-    shrimp: { body: 0xff8a65, dark: 0xe64a19, accent: 0xffccbc, eye: 0xfff59d },
-    clown: { body: 0xff7043, dark: 0xffffff, accent: 0x000000, eye: 0xffffff },
-    blue: { body: 0x42a5f5, dark: 0x1565c0, accent: 0x90caf9, eye: 0xffffff },
-    puffer: { body: 0xffca28, dark: 0xffa000, accent: 0xfff59d, eye: 0xffffff },
-    tuna: { body: 0x5c6bc0, dark: 0x303f9f, accent: 0x9fa8da, eye: 0xffffff },
-    sword: { body: 0x78909c, dark: 0x455a64, accent: 0xcfd8dc, eye: 0xffffff },
-    shark: { body: 0x607d8b, dark: 0x37474f, accent: 0xb0bec5, eye: 0xffffff },
-    orca: { body: 0x212121, dark: 0xffffff, accent: 0xeeeeee, eye: 0xffffff },
-    whale: { body: 0x455a64, dark: 0x263238, accent: 0x90a4ae, eye: 0xffffff },
-    kraken: { body: 0x7e57c2, dark: 0x4527a0, accent: 0xb39ddb, eye: 0xffcc80 },
-    leviathan: { body: 0x4a148c, dark: 0x1a0033, accent: 0xea80fc, eye: 0xff1744 },
-    player: { body: 0x66bb6a, dark: 0x2e7d32, accent: 0xa5d6a7, eye: 0xffffff },
-    angel: { body: 0xffee58, dark: 0x1565c0, accent: 0x42a5f5, eye: 0xffffff },
-    lion: { body: 0xff6f00, dark: 0xffffff, accent: 0xbf360c, eye: 0xffffff },
-    moray: { body: 0x558b2f, dark: 0x33691e, accent: 0xaed581, eye: 0xffff00 },
-    ray: { body: 0x5d4037, dark: 0x3e2723, accent: 0x8d6e63, eye: 0xffffff },
-    seahorse: { body: 0xffb74d, dark: 0xf57c00, accent: 0xffe0b2, eye: 0xffffff },
-    barra: { body: 0x90a4ae, dark: 0x546e7a, accent: 0xcfd8dc, eye: 0xffffff },
-    hammer: { body: 0x546e7a, dark: 0x37474f, accent: 0xb0bec5, eye: 0xffffff },
-    manta: { body: 0x263238, dark: 0x000000, accent: 0x90a4ae, eye: 0xffffff },
-    dolphin: { body: 0x81d4fa, dark: 0x0277bd, accent: 0xe1f5fe, eye: 0xffffff },
-    parrot: { body: 0x26a69a, dark: 0x00695c, accent: 0xff7043, eye: 0xffffff },
-    lantern: { body: 0x1a237e, dark: 0x000051, accent: 0xffff00, eye: 0xffeb3b },
-    goldfish: { body: 0xffa726, dark: 0xef6c00, accent: 0xffe082, eye: 0xffffff },
-    sunfish: { body: 0xffcc80, dark: 0xff8a65, accent: 0xfff3e0, eye: 0xffffff },
-  };
-  const pal = palette[sp] || palette.default;
-  const bodyCol = pal.body;
-  const darkCol = pal.dark != null ? pal.dark : new THREE.Color(bodyCol).multiplyScalar(0.6).getHex();
-  const mat = new THREE.MeshStandardMaterial({ color: bodyCol, roughness: 0.35, metalness: 0.12 });
-  const dark = new THREE.MeshStandardMaterial({ color: darkCol, roughness: 0.45, metalness: 0.1 });
-  const accent = new THREE.MeshStandardMaterial({ color: pal.accent, roughness: 0.4, metalness: 0.05 });
+# ============================================================
+# CLASSES PRINCIPAIS
+# ============================================================
 
-  const body = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), mat);
-  body.scale.set(0.7, 0.75, 1.5);
-  body.castShadow = true;
-  g.add(body);
+@dataclass
+class Injury:
+    tipo: str
+    severidade: int  # 1-5
+    semanas_restantes: int
+    efeito: str
+    permanente: bool = False
 
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.1, 8), dark);
-  tail.rotation.x = -Math.PI / 2;
-  tail.position.z = -1.55;
-  tail.scale.set(1, 0.35, 1.2);
-  g.add(tail);
-  g.userData.tail = tail;
+@dataclass
+class Fighter:
+    nome: str
+    peso: str
+    idade: int = 22
+    record: List[str] = field(default_factory=lambda: [0, 0, 0])  # W-L-D
+    atributos: Dict[str, int] = field(default_factory=dict)
+    wear_tear: float = 0.0
+    ranking: int = 0  # 0 = unranked
+    stage: int = 0
+    money: int = 5000
+    manager_level: int = 1
+    academy_level: int = 1
+    injuries: List[Injury] = field(default_factory=list)
+    hype: int = 10
+    fights_in_ufc: int = 0
+    title_defenses: int = 0
+    retired: bool = False
 
-  if (sp === 'clown') {
-    for (const z of [0.4, -0.2, -0.7]) {
-      const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.12, 8, 16), accent);
-      stripe.rotation.y = Math.PI / 2;
-      stripe.position.z = z;
-      stripe.scale.set(0.9, 1.1, 1);
-      g.add(stripe);
+    def __post_init__(self):
+        if not self.atributos:
+            self.atributos = {
+                "striking": random.randint(45, 65),
+                "grappling": random.randint(45, 65),
+                "clinch": random.randint(40, 60),
+                "cardio": random.randint(50, 70),
+                "chin": random.randint(50, 70),
+                "power": random.randint(45, 65),
+                "speed": random.randint(45, 65),
+                "fight_iq": random.randint(40, 60),
+                "mental": random.randint(45, 65),
+            }
+
+    @property
+    def overall(self) -> int:
+        vals = list(self.atributos.values())
+        base = sum(vals) // len(vals)
+        # Penalidade por wear & tear e lesões
+        penalty = int(self.wear_tear * 0.4)
+        for inj in self.injuries:
+            if inj.semanas_restantes > 0:
+                penalty += inj.severidade * 2
+        return max(30, base - penalty)
+
+    def is_injured(self) -> bool:
+        return any(i.semanas_restantes > 0 for i in self.injuries)
+
+    def active_injuries(self) -> List[Injury]:
+        return [i for i in self.injuries if i.semanas_restantes > 0]
+
+# ============================================================
+# SISTEMA DE LUTA
+# ============================================================
+
+def simulate_fight(player: Fighter, opponent_overall: int, is_title: bool = False) -> dict:
+    """Simula uma luta usando taxas reais + atributos do jogador."""
+    rates = FINISH_RATES[player.peso]
+    p_overall = player.overall
+
+    # Ajuste de probabilidade baseado em overall
+    diff = p_overall - opponent_overall
+    win_chance = 0.50 + (diff * 0.008)
+    win_chance = max(0.15, min(0.85, win_chance))
+
+    # Penalidade se lesionado
+    if player.is_injured():
+        win_chance *= 0.72
+
+    # Weight cut ruim aumenta chance de perda
+    for inj in player.active_injuries():
+        if inj.tipo == "lesao_weight_cut":
+            win_chance *= 0.85
+
+    won = random.random() < win_chance
+
+    # Método de finalização
+    r = random.random()
+    if r < rates["ko"]:
+        method = "KO/TKO"
+        round_num = random.choices([1, 2, 3, 4, 5], weights=[45, 25, 15, 10, 5])[0]
+    elif r < rates["ko"] + rates["sub"]:
+        method = "Submission"
+        round_num = random.choices([1, 2, 3, 4, 5], weights=[40, 30, 20, 7, 3])[0]
+    else:
+        method = "Decision"
+        round_num = 5 if is_title else 3
+
+    # Dano e lesões
+    injuries = generate_injuries(player, won, method, is_title)
+
+    # Wear & Tear
+    wear_gain = 1.5 if method in ["KO/TKO", "Submission"] else 0.8
+    if not won:
+        wear_gain *= 1.6
+    if method == "KO/TKO" and not won:
+        wear_gain += 2.5  # KO sofrido dói muito
+
+    return {
+        "won": won,
+        "method": method,
+        "round": round_num,
+        "injuries": injuries,
+        "wear_gain": wear_gain,
+        "opponent_overall": opponent_overall
     }
-  } else if (sp === 'orca') {
-    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.85, 12, 10), accent);
-    belly.scale.set(0.55, 0.5, 1.3);
-    belly.position.y = -0.25;
-    g.add(belly);
-  } else if (sp === 'puffer') {
-    body.scale.set(1.1, 1.1, 1.1);
-    for (let i = 0; i < 8; i++) {
-      const ang = (i / 8) * Math.PI * 2;
-      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.35, 5), dark);
-      spike.position.set(Math.cos(ang) * 0.7, Math.sin(ang) * 0.5, 0);
-      spike.lookAt(0, 0, 0);
-      g.add(spike);
-    }
-  } else if (sp === 'sword') {
-    const sword = new THREE.Mesh(new THREE.ConeGeometry(0.08, 1.4, 6), dark);
-    sword.rotation.x = Math.PI / 2;
-    sword.position.z = 1.9;
-    g.add(sword);
-  } else if (sp === 'shark') {
-    const snout = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 8), mat);
-    snout.rotation.x = Math.PI / 2;
-    snout.position.z = 1.5;
-    g.add(snout);
-  } else if (sp === 'kraken' || sp === 'leviathan') {
-    for (let i = 0; i < 4; i++) {
-      const ang = (i / 4) * Math.PI * 2;
-      const tent = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.04, 1.2, 6), dark);
-      tent.position.set(Math.cos(ang) * 0.5, -0.4, -0.3);
-      tent.rotation.z = Math.cos(ang) * 0.5;
-      tent.rotation.x = 0.4;
-      g.add(tent);
-    }
-  } else if (sp === 'shrimp') {
-    body.scale.set(0.5, 0.55, 1.2);
-  } else if (sp === 'whale') {
-    body.scale.set(0.9, 0.85, 1.8);
-  } else if (sp === 'angel') {
-    body.scale.set(0.35, 1.15, 1.1);
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.6, 1.1), accent);
-    wing.position.set(0, 0.1, 0);
-    g.add(wing);
-  } else if (sp === 'lion') {
-    for (let i = 0; i < 10; i++) {
-      const f = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.9, 4), i % 2 ? dark : accent);
-      const a = (i / 10) * Math.PI * 2;
-      f.position.set(Math.cos(a) * 0.55, Math.sin(a) * 0.4, 0.2);
-      f.rotation.z = a;
-      g.add(f);
-    }
-  } else if (sp === 'moray') {
-    body.scale.set(0.4, 0.4, 2.4);
-    tail.position.z = -2.2;
-  } else if (sp === 'ray' || sp === 'manta') {
-    body.scale.set(1.8, 0.22, 1.2);
-    const wingL = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.8, 4), mat);
-    wingL.rotation.z = Math.PI / 2; wingL.position.set(1.1, 0, 0);
-    g.add(wingL);
-    const wingR = wingL.clone(); wingR.position.x = -1.1; wingR.rotation.z = -Math.PI / 2;
-    g.add(wingR);
-  } else if (sp === 'seahorse') {
-    body.scale.set(0.4, 0.9, 0.7);
-  } else if (sp === 'barra') {
-    body.scale.set(0.45, 0.5, 2.0);
-  } else if (sp === 'hammer') {
-    const ham = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.25, 0.35), mat);
-    ham.position.z = 1.35;
-    g.add(ham);
-  } else if (sp === 'dolphin') {
-    body.scale.set(0.65, 0.7, 1.7);
-  } else if (sp === 'parrot') {
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 6), accent);
-    beak.rotation.x = Math.PI / 2; beak.position.z = 1.5;
-    g.add(beak);
-  } else if (sp === 'lantern') {
-    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 2 }));
-    glow.position.set(0.15, 0.55, 1.1);
-    g.add(glow);
-  } else if (sp === 'goldfish') {
-    tail.scale.set(1.6, 0.2, 1.6);
-  } else if (sp === 'sunfish') {
-    body.scale.set(1.4, 1.5, 0.7);
-  }
 
-  const fin = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 6), dark);
-  fin.position.set(0, 0.7, 0.15);
-  fin.rotation.x = 0.2;
-  g.add(fin);
-  const sideL = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.55, 6), dark);
-  sideL.position.set(0.55, -0.1, 0.2);
-  sideL.rotation.z = -0.9;
-  g.add(sideL);
-  const sideR = sideL.clone();
-  sideR.position.x = -0.55;
-  sideR.rotation.z = 0.9;
-  g.add(sideR);
+def generate_injuries(player: Fighter, won: bool, method: str, is_title: bool) -> List[Injury]:
+    """Gera lesões realistas baseadas em dados médicos."""
+    new_injuries = []
+    base_mult = 1.0
+    if not won:
+        base_mult = 2.1
+    if method == "KO/TKO":
+        base_mult *= 1.8
+    if is_title:
+        base_mult *= 1.3
 
-  const eyeM = new THREE.MeshStandardMaterial({ color: pal.eye, roughness: 0.3 });
-  const pupM = new THREE.MeshStandardMaterial({ color: 0x111111 });
-  for (const side of [1, -1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), eyeM);
-    eye.position.set(side * 0.38, 0.15, 0.95);
-    g.add(eye);
-    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), pupM);
-    pup.position.set(side * 0.42, 0.15, 1.05);
-    g.add(pup);
-  }
+    for tipo, data in INJURY_TYPES.items():
+        chance = data["chance_base"] * base_mult
+        # Wear & tear aumenta chance
+        chance += player.wear_tear * 0.015
+        chance = min(0.75, chance)
 
-  const mouthG = new THREE.Group();
-  mouthG.position.set(0, -0.1, 1.25);
-  const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.12, 0.35), dark);
-  jaw.position.y = -0.08;
-  mouthG.add(jaw);
-  g.add(mouthG);
-  g.userData.mouth = mouthG;
-  g.userData.jaw = jaw;
-  g.scale.setScalar(size);
-  g.userData.species = sp;
-  return g;
-}
+        if random.random() < chance:
+            sev = random.randint(1, 5)
+            if tipo == "concussao" and method == "KO/TKO" and not won:
+                sev = max(sev, 3)
+            semanas = random.randint(*data["recuperacao"]) * (1 + sev // 3)
+            permanente = False
+            if tipo in ["concussao", "fratura"] and sev >= 4 and player.wear_tear > 25:
+                permanente = random.random() < 0.25
+            new_injuries.append(Injury(tipo, sev, semanas, data["efeito"], permanente))
 
-function initThree() {
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.25;
-  renderer.domElement.id = 'c';
-  document.body.prepend(renderer.domElement);
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a8ab8);
-  scene.fog = new THREE.FogExp2(0x2aa8d0, 0.012);
-  camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 200);
-  scene.add(new THREE.AmbientLight(0x6ec8e8, 0.75));
-  const sun = new THREE.DirectionalLight(0xe0f6ff, 1.45);
-  sun.position.set(20, 40, 10);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 100;
-  sun.shadow.camera.left = -40;
-  sun.shadow.camera.right = 40;
-  sun.shadow.camera.top = 40;
-  sun.shadow.camera.bottom = -40;
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x40a0d0, 0.45);
-  fill.position.set(-10, 5, -15);
-  scene.add(fill);
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x3a6a58, roughness: 0.92, metalness: 0 });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(WORLD * 3, WORLD * 3, 32, 32), floorMat);
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -8;
-  floor.receiveShadow = true;
-  const pos = floor.geometry.attributes.position;
-  for (let i = 0; i < pos.count; i++) pos.setZ(i, pos.getZ(i) + (Math.random() - 0.5) * 1.2);
-  pos.needsUpdate = true;
-  floor.geometry.computeVertexNormals();
-  scene.add(floor);
-  for (let i = 0; i < 40; i++) {
-    const r = 0.8 + Math.random() * 2.5;
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.25, 0.15, 0.2 + Math.random() * 0.15), roughness: 0.9 }));
-    rock.position.set((Math.random() - 0.5) * WORLD * 1.8, -8 + r * 0.5, (Math.random() - 0.5) * WORLD * 1.8);
-    rock.rotation.set(Math.random(), Math.random(), Math.random());
-    rock.castShadow = true;
-    rock.receiveShadow = true;
-    scene.add(rock);
-  }
-  for (let i = 0; i < 60; i++) {
-    const h = 1.5 + Math.random() * 3;
-    const weed = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.12, h, 5), new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0x1b5e20 : 0x1565c0, roughness: 0.8 }));
-    weed.position.set((Math.random() - 0.5) * WORLD * 1.6, -8 + h / 2, (Math.random() - 0.5) * WORLD * 1.6);
-    weed.userData.phase = Math.random() * 10;
-    scene.add(weed);
-    bubbles.push({ type: 'weed', mesh: weed });
-  }
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(WORLD * 3, WORLD * 3), new THREE.MeshStandardMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.22, roughness: 0.15, metalness: 0.35, side: THREE.DoubleSide }));
-  water.rotation.x = -Math.PI / 2;
-  water.position.y = 11;
-  scene.add(water);
-  const bubbleMat = new THREE.MeshStandardMaterial({ color: 0xa0e0ff, transparent: true, opacity: 0.35, roughness: 0.4 });
-  for (let i = 0; i < 40; i++) {
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.08 + Math.random() * 0.12, 8, 8), bubbleMat);
-    b.position.set((Math.random() - 0.5) * 40, Math.random() * 15 - 5, (Math.random() - 0.5) * 40);
-    scene.add(b);
-    bubbles.push({ type: 'bubble', mesh: b, speed: 0.5 + Math.random() * 1.2 });
-  }
-  clock = new THREE.Clock();
-  window.addEventListener('resize', function () {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
-}
+    return new_injuries
 
-function createPlayer() {
-  if (playerMesh) scene.remove(playerMesh);
-  playerMesh = makeFishMesh(0x66bb6a, playerState.size, true, 'player');
-  scene.add(playerMesh);
-  mouthPivot = playerMesh.userData.mouth;
-}
+# ============================================================
+# SISTEMA DE CARREIRA / RANKING
+# ============================================================
 
-function spawnFish(near) {
-  const r = Math.random();
-  let size, color, danger, value, type, species;
-  if (r < 0.4) {
-    type = 'food'; size = 0.25 + Math.random() * 0.3;
-    color = [0xffab91, 0xa5d6a7, 0x80deea, 0xf48fb1][Math.floor(Math.random()*4)];
-    species = 'plankton'; danger = false; value = Math.floor(size * 15) + 1;
-  } else if (r < 0.8) {
-    const maxT = Math.min(playerState.tier + 1, TIERS.length - 1);
-    const t = TIERS[Math.floor(Math.random() * (maxT + 1))];
-    type = 'fish'; size = t.s * (0.65 + Math.random() * 0.45); color = t.c; species = t.sp;
-    danger = size > playerState.size * 1.12; value = Math.floor(size * 20);
-  } else {
-    const t = TIERS[Math.min(playerState.tier + 1 + Math.floor(Math.random() * 3), TIERS.length - 1)];
-    type = 'fish'; size = t.s * (1.05 + Math.random() * 0.4); color = t.c; species = t.sp;
-    danger = true; value = Math.floor(size * 28);
-  }
-  let x, y, z;
-  if (near) {
-    const ang = Math.random() * Math.PI * 2;
-    const d = 32 + Math.random() * 28;
-    x = playerState.x + Math.cos(ang) * d;
-    z = playerState.z + Math.sin(ang) * d;
-    y = playerState.y + (Math.random() - 0.5) * 8;
-  } else {
-    do {
-      x = (Math.random() - 0.5) * WORLD * 1.7;
-      z = (Math.random() - 0.5) * WORLD * 1.7;
-      y = -4 + Math.random() * 10;
-    } while (Math.hypot(x, z) < 28);
-  }
-  const mesh = makeFishMesh(color, size, false, species);
-  mesh.position.set(x, y, z);
-  scene.add(mesh);
-  const spd = 1 + Math.random() * 2;
-  const ang = Math.random() * Math.PI * 2;
-  const maxHp = Math.max(1, Math.ceil(size * 4));
-  entities.push({
-    mesh: mesh, size: size, color: color, type: type, danger: danger, value: value,
-    vx: Math.sin(ang) * spd, vy: (Math.random() - 0.5) * 0.4, vz: Math.cos(ang) * spd,
-    targetVx: 0, targetVz: 0, targetVy: 0,
-    yaw: ang, turnT: 1 + Math.random() * 2, wobble: Math.random() * 10,
-    hp: maxHp, maxHp: maxHp
-  });
-}
+def get_opponent_overall(player: Fighter) -> int:
+    stage = player.stage
+    base = 40 + stage * 8
+    variance = random.randint(-12, 12)
+    # No ranking, oponentes são mais fortes
+    if player.ranking > 0:
+        base += (16 - player.ranking) * 1.5
+    return max(35, min(95, int(base + variance)))
 
-function clearEntities() {
-  for (let i = 0; i < entities.length; i++) scene.remove(entities[i].mesh);
-  entities = [];
-}
+def update_ranking(player: Fighter, result: dict):
+    if player.stage < 2:  # Ainda não no UFC
+        return
 
-function updatePlayer(dt) {
-  let fwd = 0, str = 0, vert = 0;
-  if (keys['w'] || keys['arrowup'] || keys['KeyW']) fwd += 1;
-  if (keys['s'] || keys['arrowdown'] || keys['KeyS']) fwd -= 1;
-  if (keys['a'] || keys['KeyA']) str += 1;
-  if (keys['d'] || keys['KeyD']) str -= 1;
-  if (keys[' '] || keys['Space']) vert += 1;
-  if (keys['shift'] || keys['ShiftLeft'] || keys['c']) vert -= 1;
-  if (keys['q'] || keys['KeyQ']) playerState.yaw += TURN * dt;
-  if (keys['e'] || keys['KeyE']) playerState.yaw -= TURN * dt;
-  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-  for (let pi = 0; pi < pads.length; pi++) {
-    const gp = pads[pi];
-    if (!gp) continue;
-    const dead = 0.18;
-    let ax = gp.axes[0] || 0, ay = gp.axes[1] || 0, arx = gp.axes[2] || 0;
-    if (Math.abs(ax) < dead) ax = 0;
-    if (Math.abs(ay) < dead) ay = 0;
-    if (Math.abs(arx) < dead) arx = 0;
-    fwd += -ay;
-    str += ax;
-    playerState.yaw -= arx * TURN * 1.4 * dt;
-    if (gp.buttons[12] && gp.buttons[12].pressed) fwd += 1;
-    if (gp.buttons[13] && gp.buttons[13].pressed) fwd -= 1;
-    if (gp.buttons[14] && gp.buttons[14].pressed) str += 1;
-    if (gp.buttons[15] && gp.buttons[15].pressed) str -= 1;
-    if (gp.buttons[4] && gp.buttons[4].pressed) playerState.yaw += TURN * dt;
-    if (gp.buttons[5] && gp.buttons[5].pressed) playerState.yaw -= TURN * dt;
-    if (gp.buttons[0] && gp.buttons[0].pressed) vert += 1;
-    if (gp.buttons[1] && gp.buttons[1].pressed) vert -= 1;
-    if (gp.buttons[6] && gp.buttons[6].pressed) vert -= 1;
-    if (gp.buttons[7] && gp.buttons[7].pressed) vert += 1;
-  }
-  fwd = Math.max(-1, Math.min(1, fwd));
-  str = Math.max(-1, Math.min(1, str));
-  vert = Math.max(-1, Math.min(1, vert));
-  if (playerState.biteCd > 0) playerState.biteCd -= dt;
-  if (playerState.bitePulse > 0) playerState.bitePulse -= dt;
-  if ((keys['bite'] || keys['f'] || keys['KeyF']) && playerState.biteCd <= 0) {
-    playerState.bitePulse = 0.25;
-    playerState.biteCd = 0.22;
-    playerState.biteHit = true;
-    keys['bite'] = false;
-  }
-  const wantBite = playerState.bitePulse > 0;
-  playerState.mouth += ((wantBite ? 1 : 0) - playerState.mouth) * Math.min(1, 18 * dt);
-  if (fwd || str || vert) {
-    const len = Math.hypot(fwd, str, vert) || 1;
-    fwd /= len; str /= len; vert /= len;
-    const cp = Math.cos(playerState.pitch);
-    const sp = Math.sin(playerState.pitch);
-    playerState.vx += (Math.sin(playerState.yaw) * fwd * cp + Math.cos(playerState.yaw) * str) * ACCEL * dt;
-    playerState.vz += (Math.cos(playerState.yaw) * fwd * cp - Math.sin(playerState.yaw) * str) * ACCEL * dt;
-    playerState.vy += (vert + fwd * sp) * ACCEL * dt;
-  }
-  const buoyancy = (1.0 - playerState.y) * 6.5;
-  playerState.vy += buoyancy * dt;
-  playerState.vy *= Math.exp(-3.2 * dt);
-  const damp = Math.exp(-DRAG * dt);
-  playerState.vx *= damp;
-  playerState.vz *= damp;
-  const spd = Math.hypot(playerState.vx, playerState.vy, playerState.vz);
-  if (spd > MAXSP) {
-    const f = MAXSP / spd;
-    playerState.vx *= f; playerState.vy *= f; playerState.vz *= f;
-  }
-  playerState.x += playerState.vx * dt;
-  playerState.y += playerState.vy * dt;
-  playerState.z += playerState.vz * dt;
-  if (playerState.y > 10.5) { playerState.y = 10.5; playerState.vy = Math.min(0, playerState.vy); }
-  if (playerState.y < -6.5) { playerState.y = -6.5; playerState.vy = Math.max(0, playerState.vy); }
-  playerState.x = Math.max(-WORLD, Math.min(WORLD, playerState.x));
-  playerState.z = Math.max(-WORLD, Math.min(WORLD, playerState.z));
-  playerState.tail += dt * (5 + spd * 3);
-  if (playerMesh) {
-    playerMesh.position.set(playerState.x, playerState.y, playerState.z);
-    playerMesh.rotation.y = playerState.yaw;
-    playerMesh.rotation.x = playerState.pitch * 0.85;
-    playerMesh.scale.setScalar(playerState.size);
-    if (playerMesh.userData.tail) playerMesh.userData.tail.rotation.x = Math.sin(playerState.tail) * 0.45;
-    if (playerMesh.userData.jaw) {
-      playerMesh.userData.jaw.rotation.z = playerState.mouth * 0.7;
-      playerMesh.userData.jaw.position.y = -0.08 - playerState.mouth * 0.15;
-    }
-  }
-  const mh = document.getElementById('mouth-hint');
-  if (playerState.latch && playerState.latch.hp > 0) {
-    const pct = Math.max(0, playerState.latch.hp / playerState.latch.maxHp);
-    mh.style.display = 'block';
-    mh.textContent = 'GRUDADO! Vida: ' + Math.ceil(pct * 100) + '% — clique para morder!';
-  } else if (playerState.mouth > 0.4) {
-    mh.style.display = 'block';
-    mh.textContent = 'Clique para morder!';
-  } else {
-    mh.style.display = 'none';
-  }
-}
+    if result["won"]:
+        if player.ranking == 0:
+            # Entrou no ranking
+            player.ranking = random.randint(12, 15)
+        else:
+            jump = 1
+            if result["method"] in ["KO/TKO", "Submission"]:
+                jump += 1
+            if result["opponent_overall"] > player.overall + 5:
+                jump += 1
+            player.ranking = max(1, player.ranking - jump)
+    else:
+        if player.ranking > 0:
+            player.ranking = min(15, player.ranking + random.randint(2, 4))
+            if player.ranking > 15:
+                player.ranking = 0
 
-function updateCamera(dt) {
-  const dist = 12 + playerState.size * 1.8;
-  const heightBase = 4.2 + playerState.size * 0.55;
-  const cp = Math.cos(playerState.pitch);
-  const sp = Math.sin(playerState.pitch);
-  const tx = playerState.x - Math.sin(playerState.yaw) * dist * Math.max(0.35, cp);
-  const tz = playerState.z - Math.cos(playerState.yaw) * dist * Math.max(0.35, cp);
-  const ty = playerState.y + heightBase - sp * (dist * 0.55);
-  const s = 1 - Math.exp(-7 * dt);
-  camera.position.x += (tx - camera.position.x) * s;
-  camera.position.y += (ty - camera.position.y) * s;
-  camera.position.z += (tz - camera.position.z) * s;
-  camera.lookAt(
-    playerState.x + Math.sin(playerState.yaw) * 5 * cp,
-    playerState.y + 0.5 + sp * 4,
-    playerState.z + Math.cos(playerState.yaw) * 5 * cp
-  );
-}
+def check_stage_progression(player: Fighter):
+    wins = player.record[0]
+    if player.stage == 0 and wins >= random.randint(5, 8):
+        player.stage = 1
+        print("\n★ Você está no radar das grandes promoções!")
+    elif player.stage == 1 and wins >= random.randint(9, 14):
+        player.stage = 2
+        player.fights_in_ufc = 0
+        print("\n★★★ CONTRATO UFC ASSINADO! ★★★")
+        player.money += 25000
+    elif player.stage == 2 and player.ranking > 0:
+        player.stage = 3
+    elif player.stage == 3 and player.ranking <= 5:
+        player.stage = 4
+        print("\n★ Você entrou no Top 5! Title shot está próximo...")
+    elif player.stage == 4 and player.ranking <= 2 and random.random() < 0.55:
+        # Chance de title shot
+        return True
+    return False
 
-function updateEntities(dt) {
-  for (let i = entities.length - 1; i >= 0; i--) {
-    const e = entities[i];
-    e.wobble += dt * 3;
-    e.turnT -= dt;
-    if (e.turnT <= 0) {
-      e.turnT = 1.2 + Math.random() * 2.5;
-      const ang = Math.random() * Math.PI * 2;
-      const sp = 0.8 + Math.random() * 2;
-      e.targetVx = Math.sin(ang) * sp;
-      e.targetVz = Math.cos(ang) * sp;
-      e.targetVy = (Math.random() - 0.5) * 0.5;
-    }
-    if (e.danger) {
-      const dx = playerState.x - e.mesh.position.x;
-      const dy = playerState.y - e.mesh.position.y;
-      const dz = playerState.z - e.mesh.position.z;
-      const dd = Math.hypot(dx, dy, dz);
-      if (dd < 22) {
-        e.targetVx = (dx / dd) * 2.5;
-        e.targetVz = (dz / dd) * 2.5;
-        e.targetVy = (dy / dd);
-      }
-    }
-    e.vx += (e.targetVx - e.vx) * 2 * dt;
-    e.vz += (e.targetVz - e.vz) * 2 * dt;
-    e.vy += (e.targetVy - e.vy) * 1.5 * dt;
-    e.mesh.position.x += e.vx * dt;
-    e.mesh.position.y += e.vy * dt + Math.sin(e.wobble) * 0.2 * dt;
-    e.mesh.position.z += e.vz * dt;
-    e.mesh.position.y = Math.max(-6, Math.min(10, e.mesh.position.y));
-    const spH = Math.hypot(e.vx, e.vz);
-    if (spH > 0.1) {
-      const tyaw = Math.atan2(e.vx, e.vz);
-      let dyaw = tyaw - e.yaw;
-      while (dyaw > Math.PI) dyaw -= Math.PI * 2;
-      while (dyaw < -Math.PI) dyaw += Math.PI * 2;
-      e.yaw += dyaw * Math.min(1, 5 * dt);
-    }
-    e.mesh.rotation.y = e.yaw;
-    if (e.mesh.userData.tail) e.mesh.userData.tail.rotation.x = Math.sin(e.wobble * 2) * 0.4;
-    const d = Math.hypot(e.mesh.position.x - playerState.x, e.mesh.position.y - playerState.y, e.mesh.position.z - playerState.z);
-    const eatR = playerState.size * 1.15 + e.size * 0.85;
-    const bigger = e.size * 1.05 >= playerState.size && e.type !== 'food';
-    if (d < eatR && bigger && !playerState.latch) playerState.latch = e;
-    const canHit = playerState.biteHit && (playerState.latch === e || (!playerState.latch && d < eatR * 1.2));
-    if (canHit && d < eatR * 1.35) {
-      if (!bigger || e.type === 'food') {
-        showDamage(e.mesh.position, Math.round(8 + bite * 3), true);
-        playerState.biteHit = false;
-        eatEntity(i, e);
-        continue;
-      }
-      playerState.latch = e;
-      const dmg = 10 + bite * 4;
-      e.hp -= dmg;
-      playerState.biteHit = false;
-      showDamage(e.mesh.position, Math.round(dmg), false);
-      if (e.hp <= 0) {
-        playerState.latch = null;
-        eatEntity(i, e);
-        continue;
-      }
-    }
-    if (playerState.latch === e && d > eatR * 1.7) playerState.latch = null;
-    if (playerState.latch === e) {
-      const ang = e.yaw + Math.PI;
-      playerState.x = e.mesh.position.x + Math.sin(ang) * (e.size * 0.6 + playerState.size * 0.4);
-      playerState.y = e.mesh.position.y;
-      playerState.z = e.mesh.position.z + Math.cos(ang) * (e.size * 0.6 + playerState.size * 0.4);
-      playerState.vx = e.vx;
-      playerState.vy = e.vy;
-      playerState.vz = e.vz;
-    }
-    if (d < eatR * 0.7 && e.danger && e.size >= playerState.size * 1.05 && invuln <= 0 && playerState.mouth < 0.3 && playerState.latch !== e) die();
-    if (d > 100) {
-      if (playerState.latch === e) playerState.latch = null;
-      scene.remove(e.mesh);
-      entities.splice(i, 1);
-    }
-  }
-  if (playerState.biteHit && playerState.bitePulse < 0.12) playerState.biteHit = false;
-}
+def offer_title_shot(player: Fighter) -> bool:
+    print("\n" + "="*50)
+    print("🏆  OPORTUNIDADE DE TITLE SHOT  🏆")
+    print("="*50)
+    print(f"Você está ranqueado #{player.ranking}.")
+    print("A promoção oferece a chance pelo cinturão.")
+    escolha = input("Aceitar a disputa de cinturão? (s/n): ").strip().lower()
+    return escolha == "s"
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
-}
+# ============================================================
+# INTERFACE E LOOP PRINCIPAL
+# ============================================================
 
-function showDamage(pos, amount, ate) {
-  const v = new THREE.Vector3(pos.x, pos.y + 0.9, pos.z);
-  v.project(camera);
-  const el = document.createElement('div');
-  el.className = 'dmg-num' + (ate ? ' eat' : '');
-  el.textContent = ate ? 'COMIDA!' : ('-' + amount);
-  el.style.left = ((v.x * 0.5 + 0.5) * innerWidth) + 'px';
-  el.style.top = ((-v.y * 0.5 + 0.5) * innerHeight) + 'px';
-  document.getElementById('dmg-layer').appendChild(el);
-  setTimeout(function () { el.remove(); }, 800);
-}
+def clear():
+    os.system("cls" if os.name == "nt" else "clear")
 
-function eatEntity(i, e) {
-  score += e.value * bite;
-  xp += e.value + (e.maxHp || 0) * 2;
-  scene.remove(e.mesh);
-  entities.splice(i, 1);
-  playerState.size = Math.min(playerState.size + e.size * 0.06, 8);
-  if (playerMesh) playerMesh.scale.setScalar(playerState.size);
-  while (xp >= xpNeed) {
-    xp -= xpNeed; level++;
-    xpNeed = Math.floor(10 + level * 5 + level * level * 0.3);
-    bite = 6 + (level - 1) * 3;
-    playerState.size = Math.min(playerState.size + 0.12, 8);
-    if (playerMesh) playerMesh.scale.setScalar(playerState.size);
-    for (let t = TIERS.length - 1; t >= 0; t--) {
-      if (level >= TIERS[t].lv) { playerState.tier = t; break; }
-    }
-    showToast('Nivel ' + level + '! Mordida: ' + bite + ' • Tamanho: ' + playerState.size.toFixed(1));
-  }
-  ui();
-}
+def print_header(player: Fighter):
+    print("="*60)
+    print(f"  {player.nome} | {player.peso} | Idade: {player.idade}")
+    print(f"  Record: {player.record[0]}-{player.record[1]}-{player.record[2]} | Overall: {player.overall}")
+    print(f"  Stage: {STAGES[player.stage]} | Ranking: {'#'+str(player.ranking) if player.ranking else 'Unranked'}")
+    print(f"  Dinheiro: ${player.money:,} | Hype: {player.hype} | Wear&Tear: {player.wear_tear:.1f}")
+    if player.active_injuries():
+        print("  LESÕES ATIVAS:")
+        for inj in player.active_injuries():
+            perm = " (PERMANENTE)" if inj.permanente else ""
+            print(f"    - {inj.tipo.upper()} sev.{inj.severidade} | {inj.semanas_restantes} semanas{perm}")
+    print("="*60)
 
-function die() {
-  playerState.latch = null;
-  state = 'dead';
-  document.getElementById('fsc').textContent = score;
-  document.getElementById('dead').style.display = 'flex';
-  document.getElementById('pads').classList.remove('show');
-}
+def train(player: Fighter):
+    print("\n--- TREINO ---")
+    print("1. Striking")
+    print("2. Grappling")
+    print("3. Cardio / Conditioning")
+    print("4. Sparring (risco de lesão)")
+    escolha = input("Escolha: ").strip()
+    gain = random.randint(1, 3) + player.academy_level // 2
+    if escolha == "1":
+        player.atributos["striking"] = min(99, player.atributos["striking"] + gain)
+        player.atributos["power"] = min(99, player.atributos["power"] + gain // 2)
+        print(f"Striking melhorou +{gain}")
+    elif escolha == "2":
+        player.atributos["grappling"] = min(99, player.atributos["grappling"] + gain)
+        player.atributos["clinch"] = min(99, player.atributos["clinch"] + gain // 2)
+        print(f"Grappling melhorou +{gain}")
+    elif escolha == "3":
+        player.atributos["cardio"] = min(99, player.atributos["cardio"] + gain)
+        player.atributos["mental"] = min(99, player.atributos["mental"] + 1)
+        print(f"Cardio melhorou +{gain}")
+    elif escolha == "4":
+        player.atributos["fight_iq"] = min(99, player.atributos["fight_iq"] + gain)
+        if random.random() < 0.18:
+            inj = Injury("lesao_muscular", random.randint(1, 3), random.randint(2, 5), "forca_reduzida")
+            player.injuries.append(inj)
+            print("⚠ Você se lesionou no sparring!")
+        else:
+            print(f"Sparring produtivo. Fight IQ +{gain}")
+    else:
+        print("Opção inválida.")
+    player.money -= 800
+    time.sleep(1)
 
-function updateBubbles(dt) {
-  for (let i = 0; i < bubbles.length; i++) {
-    const b = bubbles[i];
-    if (b.type === 'bubble') {
-      b.mesh.position.y += b.speed * dt;
-      if (b.mesh.position.y > 12) {
-        b.mesh.position.y = -6;
-        b.mesh.position.x = playerState.x + (Math.random() - 0.5) * 30;
-        b.mesh.position.z = playerState.z + (Math.random() - 0.5) * 30;
-      }
-    } else if (b.type === 'weed') {
-      b.mesh.rotation.z = Math.sin(clock.elapsedTime * 1.5 + b.mesh.userData.phase) * 0.15;
-    }
-  }
-}
+def recover(player: Fighter):
+    if not player.active_injuries():
+        print("Você não tem lesões ativas.")
+        return
+    print("\n--- RECUPERAÇÃO ---")
+    custo = 2000 * player.manager_level
+    print(f"Tratamento premium custa ${custo}")
+    escolha = input("Pagar tratamento premium? (s/n): ").strip().lower()
+    for inj in player.active_injuries():
+        if escolha == "s" and player.money >= custo:
+            inj.semanas_restantes = max(0, inj.semanas_restantes - random.randint(2, 4))
+            player.money -= custo
+            print(f"Tratamento aplicado em {inj.tipo}.")
+        else:
+            inj.semanas_restantes = max(0, inj.semanas_restantes - 1)
+    print("Recuperação avançou.")
 
-function ui() {
-  document.getElementById('lvl').textContent = level;
-  document.getElementById('sz').textContent = playerState.size.toFixed(1);
-  document.getElementById('bt').textContent = bite;
-  document.getElementById('sc').textContent = score;
-  document.getElementById('xp-fill').style.width = Math.min(100, (xp / xpNeed) * 100) + '%';
-}
+def weight_cut(player: Fighter):
+    print("\n--- WEIGHT CUT ---")
+    print("1. Conservador (seguro)")
+    print("2. Agressivo (risco de lesão e performance ruim)")
+    escolha = input("Escolha: ").strip()
+    if escolha == "2":
+        if random.random() < 0.35:
+            inj = Injury("lesao_weight_cut", random.randint(2, 4), random.randint(1, 3), "cardio_ruim")
+            player.injuries.append(inj)
+            print("⚠ Weight cut agressivo te prejudicou!")
+        else:
+            print("Weight cut agressivo bem sucedido. Você está no peso.")
+    else:
+        print("Weight cut conservador. Você está no peso com segurança.")
 
-function start() {
-  document.getElementById('menu').style.display = 'none';
-  document.getElementById('dead').style.display = 'none';
-  document.getElementById('lvlup').style.display = 'none';
-  document.getElementById('pads').classList.add('show');
-  Object.assign(playerState, { x:0, y:2, z:0, vx:0, vy:0, vz:0, yaw:0, pitch:0, size:1, tier:0, color:0x66bb6a, mouth:0, tail:0, latch:null, bitePulse:0, biteCd:0, biteHit:false });
-  score=0; level=1; xp=0; xpNeed=10; bite=6; invuln=0; spawnT=0.5;
-  clearEntities();
-  createPlayer();
-  for (let i = 0; i < 40; i++) spawnFish(false);
-  state = 'playing';
-  ui();
-  camera.position.set(0, 8, -12);
-}
+def do_fight(player: Fighter, is_title: bool = False):
+    if player.is_injured() and any(i.severidade >= 3 for i in player.active_injuries()):
+        print("⚠ Você está seriamente lesionado. Lutar é muito arriscado.")
+        escolha = input("Lutar mesmo assim? (s/n): ").strip().lower()
+        if escolha != "s":
+            return
 
-function loop() {
-  requestAnimationFrame(loop);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  if (state === 'playing') {
-    updatePlayer(dt);
-    updateCamera(dt);
-    updateEntities(dt);
-    spawnT -= dt;
-    if (spawnT <= 0) { spawnFish(true); spawnT = Math.max(0.35, 1 - level * 0.03); }
-    if (invuln > 0) invuln -= dt;
-  }
-  updateBubbles(dt);
-  if (state === 'menu') {
-    camera.position.set(Math.sin(clock.elapsedTime * 0.15) * 15, 10, Math.cos(clock.elapsedTime * 0.15) * 15);
-    camera.lookAt(0, 0, 0);
-  }
-  renderer.render(scene, camera);
-}
+    weight_cut(player)
 
-window.addEventListener('keydown', function (e) {
-  keys[e.key.toLowerCase()] = true;
-  keys[e.code] = true;
-  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') e.preventDefault();
-});
-window.addEventListener('keyup', function (e) {
-  keys[e.key.toLowerCase()] = false;
-  keys[e.code] = false;
-});
-window.addEventListener('mousedown', function () {
-  if (state === 'playing') {
-    mouseDown = true;
-    if (playerState.biteCd <= 0) {
-      playerState.bitePulse = 0.28;
-      playerState.biteCd = 0.18;
-      playerState.biteHit = true;
-    }
-    if (document.pointerLockElement !== renderer.domElement) renderer.domElement.requestPointerLock();
-  }
-});
-window.addEventListener('mouseup', function () { mouseDown = false; });
-window.addEventListener('mousemove', function (e) {
-  if (state !== 'playing') return;
-  if (document.pointerLockElement === renderer.domElement) {
-    playerState.yaw -= e.movementX * 0.0025;
-    playerState.pitch -= e.movementY * 0.0020;
-    playerState.pitch = Math.max(-0.9, Math.min(0.9, playerState.pitch));
-  }
-});
+    opp = get_opponent_overall(player)
+    print(f"\nOponente Overall: {opp}")
+    print("A luta vai começar...")
+    time.sleep(1.2)
 
-function bind(id, key) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const down = function (ev) { ev.preventDefault(); keys[key] = true; el.classList.add('on'); };
-  const up = function (ev) { ev.preventDefault(); keys[key] = false; el.classList.remove('on'); };
-  el.addEventListener('mousedown', down);
-  el.addEventListener('mouseup', up);
-  el.addEventListener('mouseleave', up);
-  el.addEventListener('touchstart', down, { passive: false });
-  el.addEventListener('touchend', up, { passive: false });
-}
-bind('bu','w'); bind('bd','s'); bind('bl','a'); bind('br','d');
-bind('brise',' '); bind('bsink','shift'); bind('bbite','bite');
-document.getElementById('start').onclick = start;
-document.getElementById('re').onclick = start;
-document.getElementById('cont').onclick = function () {
-  document.getElementById('lvlup').style.display = 'none';
-  document.getElementById('pads').classList.add('show');
-  state = 'playing'; invuln = 1.5;
-};
+    result = simulate_fight(player, opp, is_title)
 
-try {
-  initThree();
-  createPlayer();
-  for (let i = 0; i < 25; i++) spawnFish(false);
-  loop();
-} catch (err) {
-  document.body.insertAdjacentHTML('afterbegin', '<div style="position:fixed;inset:0;z-index:99;background:#001018;color:#fff;padding:32px;font-family:sans-serif"><h2>Erro ao iniciar</h2><pre>' + String(err && err.stack || err) + '</pre></div>');
-  console.error(err);
-}
-})();
-  </script>
-</body>
-</html>
+    if result["won"]:
+        player.record[0] += 1
+        print(f"\n✅ VOCÊ VENCEU por {result['method']} (Round {result['round']})!")
+        purse = 8000 + player.stage * 6000 + player.hype * 200
+        if is_title:
+            purse *= 3
+            player.stage = 5
+            player.title_defenses = 0
+            print("\n🏆🏆🏆 VOCÊ É O NOVO CAMPEÃO DO UFC! 🏆🏆🏆")
+        player.money += purse
+        player.hype += random.randint(3, 8)
+    else:
+        player.record[1] += 1
+        print(f"\n❌ Você perdeu por {result['method']} (Round {result['round']}).")
+        purse = 4000 + player.stage * 2500
+        player.money += purse
+        player.hype = max(5, player.hype - random.randint(2, 6))
+        if is_title:
+            player.stage = 4
+            player.ranking = random.randint(2, 5)
+            print("Você perdeu o cinturão...")
+
+    player.wear_tear += result["wear_gain"]
+    player.injuries.extend(result["injuries"])
+    if result["injuries"]:
+        print("\nLesões sofridas:")
+        for inj in result["injuries"]:
+            print(f"  - {inj.tipo.upper()} (severidade {inj.severidade})")
+
+    update_ranking(player, result)
+    if player.stage >= 2:
+        player.fights_in_ufc += 1
+
+    # Avanço de estágio
+    title_offered = check_stage_progression(player)
+    if title_offered and not is_title:
+        if offer_title_shot(player):
+            do_fight(player, is_title=True)
+            return
+
+    # Defesa de cinturão
+    if player.stage == 5 and not is_title:
+        player.title_defenses += 1
+        print(f"\nDefesas de cinturão: {player.title_defenses}")
+        if random.random() < 0.4:
+            print("Nova defesa de cinturão marcada!")
+            do_fight(player, is_title=True)
+
+    player.idade += 0 if random.random() < 0.7 else 1  # idade avança ocasionalmente
+    time.sleep(2)
+
+def main_menu(player: Fighter):
+    while not player.retired:
+        clear()
+        print_header(player)
+        print("\nO que deseja fazer?")
+        print("1. Treinar")
+        print("2. Lutar")
+        print("3. Recuperar lesões")
+        print("4. Ver atributos detalhados")
+        print("5. Aposentadoria")
+        print("6. Sair do jogo")
+        escolha = input("\nEscolha: ").strip()
+
+        if escolha == "1":
+            train(player)
+        elif escolha == "2":
+            if player.stage == 5:
+                print("Você é campeão. Próxima luta pode ser defesa.")
+            do_fight(player)
+        elif escolha == "3":
+            recover(player)
+        elif escolha == "4":
+            print("\n--- ATRIBUTOS ---")
+            for k, v in player.atributos.items():
+                print(f"  {k.capitalize():15}: {v}")
+            input("\nEnter para continuar...")
+        elif escolha == "5":
+            conf = input("Tem certeza que deseja se aposentar? (s/n): ").strip().lower()
+            if conf == "s":
+                player.retired = True
+                player.stage = 6
+                print(f"\n{player.nome} se aposentou com record {player.record[0]}-{player.record[1]}-{player.record[2]}.")
+                if player.title_defenses > 0:
+                    print(f"Foi campeão e defendeu o cinturão {player.title_defenses} vez(es).")
+                print("Legado eterno.")
+                break
+        elif escolha == "6":
+            print("Progresso não é salvo neste protótipo. Até a próxima!")
+            break
+        else:
+            print("Opção inválida.")
+            time.sleep(0.8)
+
+def create_fighter() -> Fighter:
+    clear()
+    print("="*60)
+    print("   UFC CAREER: RISE TO GLORY")
+    print("   Modo Carreira Realista - Protótipo")
+    print("="*60)
+    nome = input("\nNome do lutador: ").strip() or "Prospecto"
+    print("\nEscolha a divisão:")
+    for i, w in enumerate(WEIGHT_CLASSES, 1):
+        print(f"  {i}. {w}")
+    while True:
+        try:
+            idx = int(input("Número: ").strip()) - 1
+            if 0 <= idx < len(WEIGHT_CLASSES):
+                peso = WEIGHT_CLASSES[idx]
+                break
+        except:
+            pass
+        print("Escolha inválida.")
+    fighter = Fighter(nome=nome, peso=peso)
+    print(f"\nBem-vindo, {nome}! Você começa como amador na divisão {peso}.")
+    print("Construa seu caminho até o cinturão do UFC.")
+    time.sleep(2)
+    return fighter
+
+def main():
+    player = create_fighter()
+    main_menu(player)
+    print("\nObrigado por jogar o protótipo de UFC Career: Rise to Glory!")
+    print("Dados de finalização e lesões baseados em estatísticas reais do UFC.")
+
+if __name__ == "__main__":
+    main()
